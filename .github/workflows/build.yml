@@ -15,18 +15,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: set up JDK 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
-      # n0rt3n yerine çalışan, güncel NDK kurulum aksiyonu
+      # NDK Kurulumu (En stabil çalışan topluluk sürümü)
       - name: Setup NDK
         uses: nndixon/setup-ndk@v1
         with:
-          ndk-version: r25c # Projenin ihtiyacına göre r23b veya r21e de yapabilirsin
+          ndk-version: r25c
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -34,7 +34,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew assembleDebug
 
-      # v3 yerine sorunsuz çalışan v4 sürümü
+      # Artifact yükleme (Hata veren v3 yerine kesin çözüm v4)
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
