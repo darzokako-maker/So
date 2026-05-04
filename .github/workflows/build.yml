@@ -1,4 +1,4 @@
-name: Android Build
+name: Android Build (No Wrapper)
 
 on:
   push:
@@ -19,29 +19,37 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # Gradlew olmadığı için sistem genelinde Gradle kuruyoruz
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Install NDK
         run: |
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
 
-      - name: Build with Gradle
+      # Gradlew yerine doğrudan 'gradle' komutuyla derleme
+      - name: Build with System Gradle
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          # build.gradle dosyasını bul ve o klasöre gir
+          BUILD_FILE=$(find . -name "build.gradle" | head -n 1)
+          if [ -z "$BUILD_FILE" ]; then
+            echo "HATA: build.gradle bulunamadı!"
+            exit 1
+          fi
+          cd $(dirname "$BUILD_FILE")
+          gradle assembleDebug
 
-      # .so dosyalarını bul ve "collected_libs" klasörüne kopyala
-      - name: Collect SO Files
+      # Tüm .so ve .apk dosyalarını yakala
+      - name: Collect and Upload
         run: |
-          mkdir -p collected_libs
-          find . -name "*.so" -exec cp {} ./collected_libs/ \;
-          echo "Bulunan dosyalar:"
-          ls ./collected_libs/
+          mkdir -p output_files
+          find . -name "*.so" -exec cp {} ./output_files/ \;
+          find . -name "*.apk" -exec cp {} ./output_files/ \;
 
-      - name: Upload Build Artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Full_Project_Output
-          path: |
-            **/*.apk
-            collected_libs/
-            
+          name: Final_Build_Result
+          path: output_files/
+          
