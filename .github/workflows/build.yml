@@ -22,11 +22,11 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # NDK Kurulumu (En stabil çalışan topluluk sürümü)
-      - name: Setup NDK
-        uses: nndixon/setup-ndk@v1
-        with:
-          ndk-version: r25c
+      # Dışarıdan aksiyon çağırmak yerine sistemdeki sdkmanager ile kurulum
+      - name: Install NDK
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -34,7 +34,6 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew assembleDebug
 
-      # Artifact yükleme (Hata veren v3 yerine kesin çözüm v4)
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
