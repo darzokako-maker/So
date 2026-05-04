@@ -1,9 +1,11 @@
 name: Android Build
 
 on:
-  workflow_dispatch:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,8 +20,8 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          # Hata veren cache kısmını sildik
 
+      # NDK Kurulumu (Manuel yöntem - Hata riskini sıfıra indirir)
       - name: Install NDK
         run: |
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653"
@@ -27,7 +29,6 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          # Eğer dosyaların bir klasör içindeyse o klasöre girmesi için:
           if [ -f "gradlew" ]; then
             chmod +x gradlew
             ./gradlew assembleDebug
@@ -36,9 +37,14 @@ jobs:
             find . -name "gradlew" -execdir ./gradlew assembleDebug \;
           fi
 
-      - name: Upload Build Artifact
+      # Hem APK hem de .so kütüphanelerini toplayan son adım
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: debug-apk
-          path: "**/*.apk" # Tüm alt klasörlerdeki APK'ları bulur
-          
+          name: Build_Output_Files
+          path: |
+            **/*.apk
+            **/*.so
+            **/build/intermediates/cmake/**/*.so
+            **/build/intermediates/merged_native_libs/**/*.so
+            
