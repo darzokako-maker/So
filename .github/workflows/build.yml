@@ -1,11 +1,9 @@
 name: Android Build
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:
 
 jobs:
   build:
@@ -20,23 +18,27 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+          # Hata veren cache kısmını sildik
 
-      # Dışarıdan aksiyon çağırmak yerine sistemdeki sdkmanager ile kurulum
       - name: Install NDK
         run: |
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
       - name: Build with Gradle
-        run: ./gradlew assembleDebug
+        run: |
+          # Eğer dosyaların bir klasör içindeyse o klasöre girmesi için:
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            find . -name "gradlew" -exec chmod +x {} \;
+            find . -name "gradlew" -execdir ./gradlew assembleDebug \;
+          fi
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: "**/*.apk" # Tüm alt klasörlerdeki APK'ları bulur
           
