@@ -3,8 +3,6 @@ name: Android Build
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -21,7 +19,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # NDK Kurulumu (Manuel yöntem - Hata riskini sıfıra indirir)
       - name: Install NDK
         run: |
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653"
@@ -29,22 +26,22 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew assembleDebug
-          else
-            find . -name "gradlew" -exec chmod +x {} \;
-            find . -name "gradlew" -execdir ./gradlew assembleDebug \;
-          fi
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-      # Hem APK hem de .so kütüphanelerini toplayan son adım
+      # .so dosyalarını bul ve "collected_libs" klasörüne kopyala
+      - name: Collect SO Files
+        run: |
+          mkdir -p collected_libs
+          find . -name "*.so" -exec cp {} ./collected_libs/ \;
+          echo "Bulunan dosyalar:"
+          ls ./collected_libs/
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Build_Output_Files
+          name: Full_Project_Output
           path: |
             **/*.apk
-            **/*.so
-            **/build/intermediates/cmake/**/*.so
-            **/build/intermediates/merged_native_libs/**/*.so
+            collected_libs/
             
